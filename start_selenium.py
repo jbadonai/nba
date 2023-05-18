@@ -17,6 +17,8 @@ class NBA():
         self.DATA_DIR = 'data'
         self.STANDING_DIR = os.path.join(self.DATA_DIR, "standings")
         self.SCORES_DIR = os.path.join(self.DATA_DIR, "scores")
+        self.total_game = 0
+        self.current_game_count = 0
 
     def initial_check(self):
         if not os.path.exists(self.DATA_DIR):
@@ -45,7 +47,7 @@ class NBA():
                     else:
                         raise Exception
 
-                print(driver.title)
+                # print(driver.title)
                 element = driver.find_element(By.CSS_SELECTOR, selector)
                 html = element.get_attribute('innerHTML')
                 driver.quit()
@@ -90,7 +92,12 @@ class NBA():
         hrefs = [link.get('href') for link in links]
         box_score = [l for l in hrefs if l and "boxscores" in l and ".html" in l]
         box_score = [f"https://www.basketball-reference.com{l}" for l in box_score]
+        btotal = len(box_score)
+        counter = 0
         for url in box_score:
+            counter += 1
+            sf = standing_file.split("/")[-1]
+            print(f"\rScraping file - [{self.current_game_count}/{self.total_game}] --> url:[{counter}/{btotal}] [{url.split('/')[-1]}]", end="")
             save_path = os.path.join(self.SCORES_DIR, url.split('/')[-1])
             if os.path.exists(save_path):
                 continue
@@ -99,18 +106,19 @@ class NBA():
             if not html:
                 continue
 
-            with open(save_path, 'w+') as f:
+            with open(save_path, 'w+', encoding='utf-8') as f:
                 f.write(html)
 
     def scrape_all_games(self):
         standing_files = os.listdir(self.STANDING_DIR)
         standing_files = [s for s in standing_files if ".html" in s]
+        self.total_game = len(standing_files)
         for file in standing_files:
+            self.current_game_count += 1
             file_path = os.path.join(self.STANDING_DIR,file)
             self.scrape_game(file_path)
 
         print('GAME SCRAPING COMPLETED!')
-
 
     def start(self):
         self.initial_check()
